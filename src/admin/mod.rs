@@ -1,3 +1,14 @@
+use std::cell::Cell;
+use promkit::{
+    grapheme::Graphemes, keybind::KeyBind, state::State,
+    crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers},
+    EventHandleFn,
+    readline::State as ReadlineState,
+    select::State as SelectState,
+};
+use promkit::register::Register;
+
+
 mod auth;
 mod entry;
 mod query;
@@ -42,4 +53,33 @@ pub async fn admin() -> promkit::Result<()> {
         }
     }
     Ok(())
+}
+
+pub fn readline_esc() -> KeyBind<ReadlineState> {
+    let mut b   = KeyBind::default();
+    b.assign(vec![(
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('q'),
+            modifiers: KeyModifiers::CONTROL,
+        }),
+        Box::new(|_, _, _: &mut std::io::Stdout, state: &mut ReadlineState| {
+            state.0.editor.replace(&Graphemes::from("q"));
+            Ok(true)
+        }) as Box<EventHandleFn<ReadlineState>>,
+    )]);
+    b
+}
+pub fn select_esc() -> KeyBind<SelectState> {
+    let mut b   = KeyBind::default();
+    b.assign(vec![(
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('q'),
+            modifiers: KeyModifiers::CONTROL,
+        }),
+        Box::new(|_, _, _: &mut std::io::Stdout, state: &mut SelectState| {
+            state.0.editor.position = Cell::from(state.0.editor.data.len()-1);
+            Ok(true)
+        }) as Box<EventHandleFn<SelectState>>,
+    )]);
+    b
 }

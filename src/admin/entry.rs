@@ -1,4 +1,4 @@
-use crate::admin::Result;
+use crate::admin::{Result, select_esc};
 use promkit::{build::Builder, crossterm::style, register::Register, select, selectbox::SelectBox};
 pub fn entry() -> Result {
     let mut selectbox = Box::new(SelectBox::default());
@@ -9,9 +9,10 @@ pub fn entry() -> Result {
             .collect::<Vec<String>>(),
     );
     let mut init_promt = select::Builder::default()
-        .title("Choose your command?")
+        .title("请选择: ")
         .title_color(style::Color::DarkGreen)
         .selectbox(selectbox)
+        .handler(select_esc())
         .window(5)
         .build()?;
     let res = init_promt.run()?;

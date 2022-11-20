@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 tokio = {version = "1.21.2" , features = ["full"] }
 promkit = "0.1.2"
+
+[features]
+no_db = []
