@@ -21,13 +21,13 @@ pub fn entry() -> Result {
     let res = init_promt.run()?;
 
     if res == t!("select_options.set_auth") {
-        return Ok(AdminCommand::SetAuth);
+        Ok(AdminCommand::SetAuth)
     } else if res == t!("select_options.set_public_room") {
-        return Ok(AdminCommand::SetPublicRoom);
+        Ok(AdminCommand::SetPublicRoom)
     } else if res == t!("select_options.query") {
-        return Ok(AdminCommand::Query);
+        Ok(AdminCommand::Query)
     } else if res == t!("select_options.quit") {
-        return Ok(AdminCommand::Exit);
+        Ok(AdminCommand::Exit)
     } else {
         unreachable!();
     }

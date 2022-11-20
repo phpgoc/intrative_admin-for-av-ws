@@ -27,11 +27,11 @@ pub fn set_public_room() -> Result {
         .build()?;
     let res = p.run()?;
     if res == t!("select_options.set_public_room_options.select_online") {
-        return Ok(AdminCommand::SetPublicRoomSelectOnline);
+        Ok(AdminCommand::SetPublicRoomSelectOnline)
     } else if res == t!("select_options.set_public_room_options.input_channel") {
-        return Ok(AdminCommand::SetPublicRoomInputChannelId);
+        Ok(AdminCommand::SetPublicRoomInputChannelId)
     } else if res == t!("select_options.quit") {
-        return Ok(AdminCommand::Entry);
+        Ok(AdminCommand::Entry)
     } else {
         unreachable!();
     }
@@ -107,7 +107,9 @@ pub fn input_channel_id() -> Result {
         let res = p.run()?;
 
         //todo select channel_id from db
-
+        if res == "abc"{
+            continue;
+        }
         clear(&mut stdout())?;
 
         let is_public_string = set_public_or_private.run()?;

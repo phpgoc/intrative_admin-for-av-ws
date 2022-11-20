@@ -9,7 +9,7 @@ use tokio_util::codec::{BytesCodec, FramedRead, FramedWrite};
 pub async fn tcp_server() {
     let addr = format!(
         "127.0.0.1:{}",
-        env::var("TCP_PORT").unwrap_or("9527".to_string())
+        env::var("TCP_PORT").unwrap_or_else(|_| "9527".to_string())
     );
     let listener = TcpListener::bind(&addr).await.unwrap();
     println!(" Admin Tcp Listening on : {}", addr);
@@ -52,7 +52,7 @@ pub async fn tcp_server() {
 pub async fn tcp_client() -> Result<(), Box<dyn Error>> {
     let addr = format!(
         "127.0.0.1:{}",
-        env::var("TCP_PORT").unwrap_or("9527".to_string())
+        env::var("TCP_PORT").unwrap_or_else(|_| "9527".to_string())
     );
     let stdin = FramedRead::new(io::stdin(), BytesCodec::new());
     let mut stdin = stdin.map(|i| i.map(|bytes| bytes.freeze()));
