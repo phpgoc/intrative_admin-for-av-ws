@@ -1,0 +1,16 @@
+---
+select_options:
+    set_auth: 设置权限
+    query: 查询
+    set_public_room: 设置房间是否公开
+    set_public_room_options:
+        select_online: 选择在线频道
+        input_channel: 输入频道
+    quit: 退出
+    public: 公开
+    private: 私有
+
+titles:
+    common_select: 请选择
+    select_channel: 请选择频道识别号码
+    select_online: 请输入频道识别号码

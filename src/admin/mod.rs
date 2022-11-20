@@ -1,13 +1,14 @@
-use std::cell::Cell;
+use promkit::register::Register;
 use promkit::{
-    grapheme::Graphemes, keybind::KeyBind, state::State,
     crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers},
-    EventHandleFn,
+    grapheme::Graphemes,
+    keybind::KeyBind,
     readline::State as ReadlineState,
     select::State as SelectState,
+    state::State,
+    EventHandleFn,
 };
-use promkit::register::Register;
-
+use std::cell::Cell;
 
 mod auth;
 mod entry;
@@ -24,7 +25,7 @@ pub enum AdminCommand {
     SetAuth,
     SetAuthSelectOnline,
     SetAuthInputChannelId,
-    Query,
+    query,
     Exit,
 }
 
@@ -38,7 +39,7 @@ impl AdminCommand {
             AdminCommand::SetAuth => auth::set_auth(),
             AdminCommand::SetAuthSelectOnline => auth::select_online(),
             AdminCommand::SetAuthInputChannelId => auth::input_channel_id(),
-            AdminCommand::Query => query::query(),
+            AdminCommand::query => query::query(),
             AdminCommand::Exit => Ok(AdminCommand::Exit),
         }
     }
@@ -56,7 +57,7 @@ pub async fn admin() -> promkit::Result<()> {
 }
 
 pub fn readline_esc() -> KeyBind<ReadlineState> {
-    let mut b   = KeyBind::default();
+    let mut b = KeyBind::default();
     b.assign(vec![(
         Event::Key(KeyEvent {
             code: KeyCode::Char('q'),
@@ -70,14 +71,14 @@ pub fn readline_esc() -> KeyBind<ReadlineState> {
     b
 }
 pub fn select_esc() -> KeyBind<SelectState> {
-    let mut b   = KeyBind::default();
+    let mut b = KeyBind::default();
     b.assign(vec![(
         Event::Key(KeyEvent {
             code: KeyCode::Char('q'),
             modifiers: KeyModifiers::CONTROL,
         }),
         Box::new(|_, _, _: &mut std::io::Stdout, state: &mut SelectState| {
-            state.0.editor.position = Cell::from(state.0.editor.data.len()-1);
+            state.0.editor.position = Cell::from(state.0.editor.data.len() - 1);
             Ok(true)
         }) as Box<EventHandleFn<SelectState>>,
     )]);

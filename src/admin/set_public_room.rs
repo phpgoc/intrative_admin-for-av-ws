@@ -1,4 +1,4 @@
-use crate::admin::{AdminCommand, readline_esc, Result, select_esc};
+use crate::admin::{readline_esc, select_esc, AdminCommand, Result};
 use promkit::termutil::clear;
 use promkit::{
     build::Builder, crossterm::style, readline, register::Register, select, selectbox::SelectBox,
@@ -8,67 +8,76 @@ use std::io::stdout;
 pub fn set_public_room() -> Result {
     let mut selectbox = Box::new(SelectBox::default());
     #[cfg(not(feature = "no_db"))]
-    let vec = vec!["选择当前在线的", "输入channel_id", "退出"];
+    let vec = vec![
+        t!("select_options.set_public_room_options.select_online"),
+        t!("select_options.set_public_room_options.input_channel"),
+        t!("select_options.quit"),
+    ];
     #[cfg(feature = "no_db")]
-    let vec = vec!["选择当前在线的", "退出"];
-    selectbox.register_all(vec.iter().map(|v| v.to_string()).collect::<Vec<String>>());
+    let vec = vec![
+        t!("select_options.set_public_room_options.select_online"),
+        t!("select_options.quit"),
+    ];
+    selectbox.register_all(vec);
     let mut p = select::Builder::default()
-        .title("请选择")
+        .title(t!("titles.common_select"))
         .title_color(style::Color::DarkGreen)
         .selectbox(selectbox)
         .handler(select_esc())
         .build()?;
     let res = p.run()?;
-    match res.as_str() {
-        "选择当前在线的" => Ok(AdminCommand::SetPublicRoomSelectOnline),
-        "输入channel_id" => Ok(AdminCommand::SetPublicRoomInputChannelId),
-        "退出" => Ok(AdminCommand::Entry),
-        _ => {
-            unreachable!()
-        }
+    if res == t!("select_options.set_public_room_options.select_online") {
+        return Ok(AdminCommand::SetPublicRoomSelectOnline);
+    } else if res == t!("select_options.set_public_room_options.input_channel") {
+        return Ok(AdminCommand::SetPublicRoomInputChannelId);
+    } else if res == t!("select_options.quit") {
+        return Ok(AdminCommand::Entry);
+    } else {
+        unreachable!();
     }
 }
 
 pub fn select_online() -> Result {
     //todo select from db
     let mut vec = vec![];
-    vec.push("退出");
+    vec.push(t!("select_options.quit"));
     let mut selectbox_select_channel = Box::new(SelectBox::default());
     selectbox_select_channel
         .register_all(vec.iter().map(|v| v.to_string()).collect::<Vec<String>>());
     let mut p = select::Builder::default()
-        .title("请选择channel_id")
+        .title(t!("titles.select_channel"))
         .title_color(style::Color::DarkGreen)
         .selectbox(selectbox_select_channel)
         .handler(select_esc())
         .build()?;
     let mut selectbox_is_public = Box::new(SelectBox::default());
-    selectbox_is_public.register_all(
-        ["公开的", "私密的"]
-            .iter()
-            .map(|v| v.to_string())
-            .collect::<Vec<String>>(),
-    );
+    selectbox_is_public.register_all(vec![
+        t!("select_options.public"),
+        t!("select_options.private"),
+        t!("select_options.quit"),
+    ]);
     let mut set_public_or_private = select::Builder::default()
-        .title("请选择")
+        .title(t!("titles.common_select"))
         .title_color(style::Color::DarkGreen)
         .selectbox(selectbox_is_public)
         .handler(select_esc())
         .build()?;
     loop {
         let res = p.run()?;
-        match res.as_str() {
-            "退出" => break,
-            str => {
-                let is_public_string = set_public_or_private.run()?;
-                let is_public = match is_public_string.as_str() {
-                    "公开的" => true,
-                    "私密的" => false,
-                    "退出" => return Ok(AdminCommand::SetPublicRoomSelectOnline),
-                    _ => unreachable!(),
-                };
-                //todo update db
-            }
+        if res == t!("select_options.quit") {
+            break;
+        } else {
+            let is_public_string = set_public_or_private.run()?;
+            let is_public = if is_public_string == t!("select_options.public") {
+                true
+            } else if is_public_string == t!("select_options.private") {
+                false
+            } else if is_public_string == t!("select_options.quit") {
+                return Ok(AdminCommand::SetPublicRoomSelectOnline);
+            } else {
+                unreachable!();
+            };
+            //todo update db
         }
     }
     Ok(AdminCommand::SetPublicRoom)
@@ -77,49 +86,44 @@ pub fn select_online() -> Result {
 // #[cfg(not(feature = "no_db"))]
 pub fn input_channel_id() -> Result {
     let mut p = readline::Builder::default()
-        .title("<输入q退出>选择channel_id：")
+        .title(t!("titles.select_channel"))
         .title_color(style::Color::DarkBlue)
         .handler(readline_esc())
         .build()?;
     let mut selectbox = Box::new(SelectBox::default());
-    selectbox.register_all(
-        ["公开的", "私密的","退出"]
-            .iter()
-            .map(|v| v.to_string())
-            .collect::<Vec<String>>(),
-    );
+    selectbox.register_all(vec![
+        t!("select_options.public"),
+        t!("select_options.private"),
+        t!("select_options.quit"),
+    ]);
     let mut set_public_or_private = select::Builder::default()
-        .title("请选择")
+        .title(t!("titles.common_select"))
         .title_color(style::Color::DarkGreen)
         .selectbox(selectbox)
         .handler(select_esc())
         .build()?;
     loop {
         let res = p.run()?;
-        match res.as_str() {
-            "q" => {
-                clear(&mut stdout())?;
-                break;
-            }
-            str => {
-                //todo select channel_id from db
-                let mut is_public = true;
-                loop{
 
-                    clear(&mut stdout())?;
+        //todo select channel_id from db
+        let mut is_public = true;
 
-                    let is_public_string = set_public_or_private.run()?;
-                    is_public = match is_public_string.as_str() {
-                        "公开的" => true,
-                        "私密的" => false,
-                        "退出" => return Ok(AdminCommand::SetPublicRoomInputChannelId),
-                        _ => unreachable!(),
-                    }
-                }
-                //todo update db
-                println!("输入的channel_id({})为：,{}", str, is_public);
-            }
-        }
+        clear(&mut stdout())?;
+
+        let is_public_string = set_public_or_private.run()?;
+        let is_public = if is_public_string == t!("select_options.public") {
+            true
+        } else if is_public_string == t!("select_options.private") {
+            false
+        } else if is_public_string == t!("select_options.quit") {
+            return Ok(AdminCommand::SetPublicRoomSelectOnline);
+        } else {
+            unreachable!();
+        };
+
+        //todo update db
+        let (_, _) = (res, is_public);
+        break;
     }
     Ok(AdminCommand::SetPublicRoom)
 }

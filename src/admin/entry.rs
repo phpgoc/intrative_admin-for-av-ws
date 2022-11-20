@@ -1,13 +1,16 @@
-use crate::admin::{Result, select_esc};
+use crate::admin::{select_esc, AdminCommand, Result};
+use rust_i18n::{i18n, t};
+i18n!("locales");
+
 use promkit::{build::Builder, crossterm::style, register::Register, select, selectbox::SelectBox};
 pub fn entry() -> Result {
     let mut selectbox = Box::new(SelectBox::default());
-    selectbox.register_all(
-        vec!["设置发言权限", "设置房间公开", "查询", "退出"]
-            .iter()
-            .map(|v| v.to_string())
-            .collect::<Vec<String>>(),
-    );
+    selectbox.register_all(vec![
+        t!("select_options.set_auth"),
+        t!("select_options.set_public_room"),
+        t!("select_options.query"),
+        t!("select_options.quit"),
+    ]);
     let mut init_promt = select::Builder::default()
         .title("请选择: ")
         .title_color(style::Color::DarkGreen)
@@ -16,13 +19,16 @@ pub fn entry() -> Result {
         .window(5)
         .build()?;
     let res = init_promt.run()?;
-    match res.as_str() {
-        "设置发言权限" => Ok(crate::admin::AdminCommand::SetAuth),
-        "设置房间公开" => Ok(crate::admin::AdminCommand::SetPublicRoom),
-        "查询" => Ok(crate::admin::AdminCommand::Query),
-        "退出" => Ok(crate::admin::AdminCommand::Exit),
-        _ => {
-            unreachable!()
-        }
+
+    if res == t!("select_options.set_auth") {
+        return Ok(AdminCommand::SetAuth);
+    } else if res == t!("select_options.set_public_room") {
+        return Ok(AdminCommand::SetPublicRoom);
+    } else if res == t!("select_options.query") {
+        return Ok(AdminCommand::query);
+    } else if res == t!("select_options.quit") {
+        return Ok(AdminCommand::Exit);
+    } else {
+        unreachable!();
     }
 }

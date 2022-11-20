@@ -1,0 +1,16 @@
+---
+select_options:
+    set_auth: set_auth
+    quit: quit
+    query: query
+    set_public_room: set_public_room
+    set_public_room_options:
+        select_online: select_online
+        input_channel: input_channel
+    public: public
+    private: private
+
+titles:
+    common_select: Please select
+    select_channel: Please select a channel
+    select_online: Please select a channel
