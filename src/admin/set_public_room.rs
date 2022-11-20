@@ -77,6 +77,7 @@ pub fn select_online() -> Result {
             } else {
                 unreachable!();
             };
+            let _ = is_public;
             //todo update db
         }
     }
@@ -106,7 +107,6 @@ pub fn input_channel_id() -> Result {
         let res = p.run()?;
 
         //todo select channel_id from db
-        let mut is_public = true;
 
         clear(&mut stdout())?;
 

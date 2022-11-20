@@ -25,7 +25,7 @@ pub fn entry() -> Result {
     } else if res == t!("select_options.set_public_room") {
         return Ok(AdminCommand::SetPublicRoom);
     } else if res == t!("select_options.query") {
-        return Ok(AdminCommand::query);
+        return Ok(AdminCommand::Query);
     } else if res == t!("select_options.quit") {
         return Ok(AdminCommand::Exit);
     } else {

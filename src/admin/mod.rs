@@ -1,11 +1,9 @@
-use promkit::register::Register;
 use promkit::{
     crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers},
     grapheme::Graphemes,
     keybind::KeyBind,
     readline::State as ReadlineState,
     select::State as SelectState,
-    state::State,
     EventHandleFn,
 };
 use std::cell::Cell;
@@ -14,6 +12,7 @@ mod auth;
 mod entry;
 mod query;
 mod set_public_room;
+pub(crate) mod tcp;
 
 type Result = std::result::Result<AdminCommand, std::io::Error>;
 
@@ -25,7 +24,7 @@ pub enum AdminCommand {
     SetAuth,
     SetAuthSelectOnline,
     SetAuthInputChannelId,
-    query,
+    Query,
     Exit,
 }
 
@@ -39,7 +38,7 @@ impl AdminCommand {
             AdminCommand::SetAuth => auth::set_auth(),
             AdminCommand::SetAuthSelectOnline => auth::select_online(),
             AdminCommand::SetAuthInputChannelId => auth::input_channel_id(),
-            AdminCommand::query => query::query(),
+            AdminCommand::Query => query::query(),
             AdminCommand::Exit => Ok(AdminCommand::Exit),
         }
     }
