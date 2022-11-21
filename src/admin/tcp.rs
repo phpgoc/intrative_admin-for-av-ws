@@ -5,6 +5,7 @@ use tokio::io;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_util::codec::{BytesCodec, FramedRead, FramedWrite};
+use serde::{Deserialize, Serialize};
 
 pub async fn tcp_server() {
     let addr = format!(
@@ -77,4 +78,17 @@ pub async fn tcp_client() -> Result<(), Box<dyn Error>> {
         (Err(e), _) | (_, Err(e)) => Err(e.into()),
         _ => Ok(()),
     }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub(crate) enum TcpRequest{
+
+    SetAuth(String, String),
+    ListChannels,
+    ListChannelUsers(String),
+    ListChannelPublishedUsers(String),
+    SetRoomPublic(String, bool),
+    SetRoomMaxPublishers(String, u32),
+    QueryRoom(String),
+    KickUser(String, String),
 }

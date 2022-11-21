@@ -1,15 +1,22 @@
 use crate::admin::{auth, entry, query, set_public_room};
 use std::fmt;
-
 #[derive(Debug)]
 pub enum AdminError {
     DbError(String),
-    B,
+    UnknownChannel(String),
+    UnknownUser(String),
+    UserNotInChannel(String, String),
 }
 
 impl fmt::Display for AdminError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Error: {:?}", self)
+        match self {
+            AdminError::DbError(e) => write!(f, "Database error: {}", e),
+            AdminError::UnknownChannel(c) => write!(f, "Unknown channel: {}", c),
+            AdminError::UnknownUser(u) => write!(f, "Unknown user: {}", u),
+            AdminError::UserNotInChannel(u, c) => write!(f, "User {} is not in channel {}", u, c),
+        }
+        // write!(f, "Error: {:?}", self)
     }
 }
 
