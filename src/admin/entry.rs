@@ -1,9 +1,11 @@
-use crate::admin::{select_esc, AdminCommand, Result};
+use crate::admin::select_esc;
 use rust_i18n::{i18n, t};
 i18n!("locales");
 
+use crate::admin::structs_types::{AdminCommand, CommandResult};
 use promkit::{build::Builder, crossterm::style, register::Register, select, selectbox::SelectBox};
-pub fn entry() -> Result {
+
+pub fn entry() -> CommandResult {
     let mut selectbox = Box::new(SelectBox::default());
     selectbox.register_all(vec![
         t!("select_options.set_auth"),
@@ -12,7 +14,7 @@ pub fn entry() -> Result {
         t!("select_options.quit"),
     ]);
     let mut init_promt = select::Builder::default()
-        .title("请选择: ")
+        .title(t!("select_options.title"))
         .title_color(style::Color::DarkGreen)
         .selectbox(selectbox)
         .handler(select_esc())

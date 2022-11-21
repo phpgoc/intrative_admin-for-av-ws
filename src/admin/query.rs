@@ -1,4 +1,5 @@
-use crate::admin::{AdminCommand, Result};
-pub fn query() -> Result {
+use crate::admin::structs_types::{AdminCommand, CommandResult};
+
+pub fn query() -> CommandResult {
     Ok(AdminCommand::Entry)
 }

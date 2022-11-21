@@ -1,11 +1,12 @@
-use crate::admin::{readline_esc, select_esc, AdminCommand, Result};
+use crate::admin::structs_types::{AdminCommand, CommandResult};
+use crate::admin::{readline_esc, select_esc};
 use promkit::termutil::clear;
 use promkit::{
     build::Builder, crossterm::style, readline, register::Register, select, selectbox::SelectBox,
 };
 use std::io::stdout;
 
-pub fn set_public_room() -> Result {
+pub fn set_public_room() -> CommandResult {
     let mut selectbox = Box::new(SelectBox::default());
     #[cfg(not(feature = "no_db"))]
     let vec = vec![
@@ -37,7 +38,7 @@ pub fn set_public_room() -> Result {
     }
 }
 
-pub fn select_online() -> Result {
+pub fn select_online() -> CommandResult {
     //todo select from db
     let mut vec = vec![];
     vec.push(t!("select_options.quit"));
@@ -85,7 +86,7 @@ pub fn select_online() -> Result {
 }
 
 // #[cfg(not(feature = "no_db"))]
-pub fn input_channel_id() -> Result {
+pub fn input_channel_id() -> CommandResult {
     let mut p = readline::Builder::default()
         .title(t!("titles.select_channel"))
         .title_color(style::Color::DarkBlue)
@@ -107,7 +108,7 @@ pub fn input_channel_id() -> Result {
         let res = p.run()?;
 
         //todo select channel_id from db
-        if res == "abc"{
+        if res == "abc" {
             continue;
         }
         clear(&mut stdout())?;

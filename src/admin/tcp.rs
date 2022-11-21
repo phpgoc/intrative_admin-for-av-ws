@@ -60,7 +60,7 @@ pub async fn tcp_client() -> Result<(), Box<dyn Error>> {
     let mut stream = TcpStream::connect(addr).await.unwrap();
     let (r, w) = stream.split();
     let mut sink = FramedWrite::new(w, BytesCodec::new());
-    // filter map Result<BytesMut, Error> stream into just a Bytes stream to match stdout Sink
+    // filter map CommandResult<BytesMut, Error> stream into just a Bytes stream to match stdout Sink
     // on the event of an Error, log the error and end the stream
     let mut stream = FramedRead::new(r, BytesCodec::new())
         .filter_map(|i| match i {
