@@ -2,6 +2,7 @@ mod admin;
 
 #[macro_use]
 extern crate rust_i18n;
+extern crate core;
 
 use std::env;
 use std::env::args;
@@ -19,7 +20,8 @@ async fn main() {
         if args().nth(1).unwrap() == "admin" {
             admin::tcp::tcp_server().await;
         } else if args().nth(1).unwrap() == "client" {
-            admin::tcp::tcp_client().await.unwrap();
+            admin::tcp::connect_tcp().await.unwrap();
+            admin::tcp::send_tcp_request(admin::tcp::TcpRequest::Ping).await;
         }
         return;
     }
