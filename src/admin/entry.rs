@@ -14,11 +14,10 @@ pub fn entry() -> CommandResult {
         t!("select_options.quit"),
     ]);
     let mut init_promt = select::Builder::default()
-        .title(t!("select_options.title"))
+        .title(t!("titles.common_select"))
         .title_color(style::Color::DarkGreen)
         .selectbox(selectbox)
         .handler(select_esc())
-        .window(5)
         .build()?;
     let res = init_promt.run()?;
 

@@ -1,4 +1,12 @@
 ---
+noun:
+    published_user: 发布中
+    yes: 是
+    channel_name: 频道名称
+    no: 否
+    joined: 频道内成员
+    is_public: 是否公开
+
 select_options:
     set_auth: 设置权限
     query: 查询

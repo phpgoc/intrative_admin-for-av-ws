@@ -1,12 +1,21 @@
 ---
+noun:
+    published_user: published user
+    yes: "yes"
+    channel_name: channel_name
+    no: "no"
+    joined: joined user
+    is_public: is public
+
+
 select_options:
     set_auth: set_auth
     quit: quit
     query: query
-    set_public_room: set_public_room
+    set_public_room: set public room
     set_public_room_options:
-        select_online: select_online
-        input_channel: input_channel
+        select_online: select online
+        input_channel: input channel
     public: public
     private: private
 

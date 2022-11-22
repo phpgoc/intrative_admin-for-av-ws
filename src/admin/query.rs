@@ -7,6 +7,7 @@ use promkit::register::Register;
 use promkit::select;
 use promkit::selectbox::SelectBox;
 use std::process::exit;
+use promkit::termutil::clear;
 
 pub fn query() -> CommandResult {
     let TcpResponse::List(mut channels) = send_tcp_request(crate::admin::tcp::TcpRequest::ListChannels).unwrap() else {
@@ -25,8 +26,22 @@ pub fn query() -> CommandResult {
     if res == t!("select_options.quit") {
         return Ok(AdminCommand::Entry);
     }
-    let info = send_tcp_request(crate::admin::tcp::TcpRequest::QueryRoom(res.clone())).unwrap();
-    println!("{:?}", info);
+    let TcpResponse::Query(info) = send_tcp_request(crate::admin::tcp::TcpRequest::QueryRoom(res.clone())).unwrap() else {
+        unreachable!();
+    };
+    println!("{}: {}", t!("noun.channel_name"), res.clone());
+    println!(
+        "{}: {}",
+        t!("noun.is_public"),
+        if info.is_public_room {
+            t!("noun.yes")
+        } else {
+            t!("noun.no")
+        }
+    );
+    println!("{}: {:?}", t!("noun.published_user"), info.published);
+    println!("{}: {:?}", t!("noun.joined"), info.joined);
     std::io::stdin().read_line(&mut String::new()).unwrap();
+    clear(&mut std::io::stdout()).unwrap();
     Ok(AdminCommand::Entry)
 }
