@@ -76,6 +76,7 @@ pub(crate) fn send_tcp_request(request: TcpRequest) -> TcpResponse {
 
     while let Err(e) = stream.write(&req_vec) {
         println!("tcp write error: {}", e);
+        exit(1);
     }
     let n = stream.read(&mut buf).unwrap();
     unsafe {
