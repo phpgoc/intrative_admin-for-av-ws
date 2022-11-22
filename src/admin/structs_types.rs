@@ -8,8 +8,6 @@ pub enum AdminCommand {
     SetPublicRoomSelectOnline,
     SetPublicRoomInputChannelId,
     SetAuth,
-    SetAuthSelectOnline,
-    SetAuthInputChannelId,
     Query,
     Exit,
 }
@@ -22,8 +20,6 @@ impl AdminCommand {
             AdminCommand::SetPublicRoomSelectOnline => set_public_room::select_online(),
             AdminCommand::SetPublicRoomInputChannelId => set_public_room::input_channel_id(),
             AdminCommand::SetAuth => auth::set_auth(),
-            AdminCommand::SetAuthSelectOnline => auth::select_online(),
-            AdminCommand::SetAuthInputChannelId => auth::input_channel_id(),
             AdminCommand::Query => query::query(),
             AdminCommand::Exit => Ok(AdminCommand::Exit),
         }

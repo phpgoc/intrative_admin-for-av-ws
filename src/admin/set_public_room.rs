@@ -1,11 +1,11 @@
 use crate::admin::structs_types::{AdminCommand, CommandResult};
+use crate::admin::tcp::{send_tcp_request, TcpRequest, TcpResponse};
 use crate::admin::{readline_esc, select_esc};
 use promkit::termutil::clear;
 use promkit::{
     build::Builder, crossterm::style, readline, register::Register, select, selectbox::SelectBox,
 };
 use std::io::stdout;
-use crate::admin::tcp::{send_tcp_request, tcp_server, TcpRequest, TcpResponse};
 
 pub fn set_public_room() -> CommandResult {
     let mut selectbox = Box::new(SelectBox::default());
@@ -34,14 +34,13 @@ pub fn set_public_room() -> CommandResult {
 }
 
 pub fn select_online() -> CommandResult {
-    let TcpResponse::List(mut vec) = send_tcp_request(TcpRequest::ListChannels).unwrap() else{
+    let TcpResponse::List(mut vec) = send_tcp_request(TcpRequest::ListChannels).unwrap() else {
         unreachable!();
     };
 
     vec.push(t!("select_options.quit"));
     let mut selectbox_select_channel = Box::new(SelectBox::default());
-    selectbox_select_channel
-        .register_all(vec);
+    selectbox_select_channel.register_all(vec);
     let mut p = select::Builder::default()
         .title(t!("titles.select_channel"))
         .title_color(style::Color::DarkGreen)
@@ -103,12 +102,11 @@ pub fn input_channel_id() -> CommandResult {
         .handler(select_esc())
         .build()?;
     loop {
-        let res = p.run()?;
+        let channel = p.run()?;
 
-        if res == t!("select_options.quit") {
-            break;
+        if channel == t!("select_options.quit") {
+            return Ok(AdminCommand::SetPublicRoomInputChannelId);
         }
-        clear(&mut stdout())?;
 
         let is_public_string = set_public_or_private.run()?;
         let is_public = if is_public_string == t!("select_options.public") {
@@ -116,27 +114,20 @@ pub fn input_channel_id() -> CommandResult {
         } else if is_public_string == t!("select_options.private") {
             false
         } else if is_public_string == t!("select_options.quit") {
-            return Ok(AdminCommand::SetPublicRoomSelectOnline);
+            continue;
         } else {
             unreachable!();
         };
-        match send_tcp_request(TcpRequest::SetRoomPublic(res, is_public)).unwrap() {
-            TcpResponse::Ok => {
-                return Ok(AdminCommand::SetPublicRoomInputChannelId);
-            }
+        let res = send_tcp_request(TcpRequest::SetRoomPublic(channel, is_public)).unwrap();
+        match res {
             TcpResponse::UnknownSelected => {
                 println!("{}", t!("errors.unknown_selected"));
                 std::io::stdin().read_line(&mut String::new()).unwrap();
                 clear(&mut stdout()).unwrap();
-                return Ok(AdminCommand::SetPublicRoomInputChannelId);
             }
-            _ => {
-                unreachable!();
-            }
+            _ => (),
         }
-        //todo update db
-        let (_, _) = (res, is_public);
         break;
     }
-    Ok(AdminCommand::SetPublicRoom)
+    Ok(AdminCommand::SetPublicRoomInputChannelId)
 }

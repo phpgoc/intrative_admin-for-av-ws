@@ -1,6 +1,5 @@
 use crate::admin::tcp::TcpResponse;
 use serde::{Deserialize, Serialize};
-use sled::Db;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -47,9 +46,29 @@ impl crate::admin::db::traits::AsyncDbTrait for Dummy {
         }
     }
 
-
     async fn list_channels(&self) -> TcpResponse {
-        TcpResponse::List(self.data.lock().await.keys().map(|x| x.to_string()).collect())
+        TcpResponse::List(
+            self.data
+                .lock()
+                .await
+                .keys()
+                .map(|x| x.to_string())
+                .collect(),
+        )
+    }
+
+    async fn list_channel_users(&self, channel_id: &str) -> TcpResponse {
+        TcpResponse::List(
+            self.data
+                .lock()
+                .await
+                .get(channel_id)
+                .unwrap()
+                .joined
+                .iter()
+                .map(|x| x.to_string())
+                .collect(),
+        )
     }
 
     async fn set_room_public(&self, channel_id: &str, is_public: bool) -> TcpResponse {
@@ -59,10 +78,41 @@ impl crate::admin::db::traits::AsyncDbTrait for Dummy {
                 t.is_public_room = is_public;
                 TcpResponse::Ok
             }
-            None => TcpResponse::UnknownSelected
+            None => TcpResponse::UnknownSelected,
         }
     }
 
+    async fn set_channel_user_auth(
+        &self,
+        channel_id: &str,
+        user_name: &str,
+        auth: bool,
+    ) -> TcpResponse {
+        let mut data = self.data.lock().await;
+        match data.get_mut(channel_id) {
+            Some(t) => {
+                if auth {
+                    t.auth.insert(user_name.to_string());
+                } else {
+                    t.published.remove(user_name);
+                    t.auth.remove(user_name);
+                }
+                TcpResponse::Ok
+            }
+            None => TcpResponse::UnknownSelected,
+        }
+    }
+
+    async fn kick_out(&self, channel_id: &str, user: &str) -> TcpResponse {
+        let mut data = self.data.lock().await;
+        match data.get_mut(channel_id) {
+            Some(t) => {
+                t.published.remove(user);
+                TcpResponse::Ok
+            }
+            None => TcpResponse::UnknownSelected,
+        }
+    }
 
     async fn query(&self, channel_id: &str) -> TcpResponse {
         match self.data.lock().await.get(channel_id) {

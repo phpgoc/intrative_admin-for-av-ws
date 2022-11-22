@@ -6,7 +6,6 @@ use promkit::crossterm::style;
 use promkit::register::Register;
 use promkit::select;
 use promkit::selectbox::SelectBox;
-use std::process::exit;
 use promkit::termutil::clear;
 
 pub fn query() -> CommandResult {
@@ -39,8 +38,10 @@ pub fn query() -> CommandResult {
             t!("noun.no")
         }
     );
-    println!("{}: {:?}", t!("noun.published_user"), info.published);
     println!("{}: {:?}", t!("noun.joined"), info.joined);
+    println!("{}: {:?}", t!("noun.auth"), info.auth);
+    println!("{}: {:?}", t!("noun.published_user"), info.published);
+
     std::io::stdin().read_line(&mut String::new()).unwrap();
     clear(&mut std::io::stdout()).unwrap();
     Ok(AdminCommand::Query)

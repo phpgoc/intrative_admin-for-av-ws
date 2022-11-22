@@ -6,20 +6,27 @@ noun:
     no: "no"
     joined: joined user
     is_public: is public
-
+    auth: auth
 
 select_options:
     set_auth: set_auth
+    auth:
+        add: add auth
+        remove: remove auth
+        kick_out: kick out(unpublish)
     quit: quit
     query: query
     set_public_room: set public room
     set_public_room_options:
         select_online: select online
         input_channel: input channel
+
     public: public
     private: private
 
 titles:
     common_select: Please select
     select_channel: Please select a channel
-    select_online: Please select a channel
+    select_user: Please select a user
+errors:
+    unknown_selected: unknown selected

@@ -6,9 +6,14 @@ noun:
     no: 否
     joined: 频道内成员
     is_public: 是否公开
+    auth: 权限
 
 select_options:
     set_auth: 设置权限
+    auth:
+        add: 增加权限
+        remove: 移除权限
+        kick_out: 踢出频道（取消发布）
     query: 查询
     set_public_room: 设置房间是否公开
     set_public_room_options:
@@ -21,4 +26,7 @@ select_options:
 titles:
     common_select: 请选择
     select_channel: 请选择频道识别号码
-    select_online: 请输入频道识别号码
+    select_user: 请选择在线的用户
+
+errors:
+    unknown_selected: 无效选择

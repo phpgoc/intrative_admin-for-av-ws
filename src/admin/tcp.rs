@@ -18,7 +18,7 @@ pub async fn tcp_server() {
     loop {
         let (mut stream, _) = listener.accept().unwrap();
         println!("New connection: {}", stream.peer_addr().unwrap());
-        let mut db = db_impl.clone();
+        let db = db_impl.clone();
         tokio::spawn(async move {
             let mut buf = [0; 1024];
             loop {
@@ -30,13 +30,20 @@ pub async fn tcp_server() {
                 let response = match request {
                     TcpRequest::Ping => TcpResponse::Pong,
                     TcpRequest::ListChannels => db.list_channels().await,
-                    // TcpRequest::SetAuth(_, _, _) => {}
-                    // TcpRequest::ListChannelUsers(_) => {}
+                    TcpRequest::SetAuth(channel, user_name, opertion) => {
+                        db.set_channel_user_auth(&channel, &user_name, opertion)
+                            .await
+                    }
+                    TcpRequest::ListChannelUsers(channel) => db.list_channel_users(&channel).await,
                     // TcpRequest::ListChannelPublishedUsers(_) => {}
-                    TcpRequest::SetRoomPublic(channel_id, is_public) => {db.set_room_public(&channel_id, is_public).await}
+                    TcpRequest::SetRoomPublic(channel_id, is_public) => {
+                        db.set_room_public(&channel_id, is_public).await
+                    }
                     // TcpRequest::SetRoomMaxPublishers(_, _) => {}
                     TcpRequest::QueryRoom(chanel_id) => db.query(chanel_id.as_str()).await,
-                    // TcpRequest::KickUser(_, _) => {}
+                    TcpRequest::KickUser(channel, user_name) => {
+                        db.kick_out(&channel, &user_name).await
+                    }
                     _ => TcpResponse::Unknown,
                 };
                 let response = bincode::serialize(&response).unwrap();
@@ -108,7 +115,7 @@ pub(crate) enum TcpResponse {
 impl TcpResponse {
     pub(crate) fn unwrap(self) -> Self {
         match self {
-            TcpResponse::DbError | TcpResponse::Unknown=> {
+            TcpResponse::DbError | TcpResponse::Unknown => {
                 println!("TcpResponse unwrap error");
                 std::io::stdin().read(&mut [0]).unwrap();
                 exit(1);
