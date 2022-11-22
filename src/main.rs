@@ -21,10 +21,11 @@ async fn main() {
             admin::tcp::tcp_server().await;
         } else if args().nth(1).unwrap() == "client" {
             admin::tcp::connect_tcp().await.unwrap();
-            admin::tcp::send_tcp_request(admin::tcp::TcpRequest::Ping).await;
+            admin::tcp::send_tcp_request(admin::tcp::TcpRequest::Ping);
         }
         return;
     }
+    admin::tcp::connect_tcp().await.unwrap();
     if let Err(e) = crate::admin::admin().await {
         println!("error: {}", e);
     }

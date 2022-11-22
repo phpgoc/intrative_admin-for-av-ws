@@ -1,2 +1,2 @@
-mod dummy;
-mod traits;
+pub(crate) mod dummy;
+pub(crate) mod traits;

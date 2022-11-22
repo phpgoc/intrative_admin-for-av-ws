@@ -1,9 +1,11 @@
-use crate::admin::structs_types::AdminError;
+use crate::admin::db::dummy::{ChannelInfo, Dummy};
+use crate::admin::db::traits::AsyncDbTrait;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::error::Error;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::process::exit;
 
 pub async fn tcp_server() {
     let addr = format!(
@@ -12,44 +14,36 @@ pub async fn tcp_server() {
     );
     let listener = TcpListener::bind(&addr).unwrap();
     println!("Tcp Listening on : {}", addr);
-
+    let db_impl = Dummy::new();
     loop {
-        let (mut socket, _) = listener.accept().unwrap();
-        println!(" Accepted connection from: {}", socket.peer_addr().unwrap());
+        let (mut stream, _) = listener.accept().unwrap();
+        println!("New connection: {}", stream.peer_addr().unwrap());
+        let mut db = db_impl.clone();
         tokio::spawn(async move {
-            let mut buf = vec![0; 1024];
-
-            // In a loop, read data from the socket and write the data back.
+            let mut buf = [0; 1024];
             loop {
-                let n = socket.read(&mut buf).map_or(0, |n| n);
-
+                let n = stream.read(&mut buf).unwrap();
                 if n == 0 {
-                    println!("Tcp Connection closed");
                     return;
                 }
-                println!("Received data from client: {:?}", &buf[0..n]);
-                let Ok(request) = bincode::deserialize::<TcpRequest>(&buf[..n]) else {
-                    let res_vec = bincode::serialize(&TcpResponse::Unknown).unwrap();
-                    socket.write_all(&res_vec).unwrap();
-                    continue;
-                };
-                let res = match request {
-                    TcpRequest::SetAuth(_, _) => TcpResponse::Unknown,
-                    TcpRequest::ListChannels => TcpResponse::Unknown,
-                    TcpRequest::ListChannelUsers(_) => TcpResponse::Unknown,
-                    TcpRequest::ListChannelPublishedUsers(_) => TcpResponse::Unknown,
-                    TcpRequest::SetRoomPublic(_, _) => TcpResponse::Unknown,
-                    TcpRequest::SetRoomMaxPublishers(_, _) => TcpResponse::Unknown,
-                    TcpRequest::QueryRoom(_) => TcpResponse::Unknown,
-                    TcpRequest::KickUser(_, _) => TcpResponse::Unknown,
+                let request: TcpRequest = bincode::deserialize(&buf[..n]).unwrap();
+                let response = match request {
                     TcpRequest::Ping => TcpResponse::Pong,
+                    TcpRequest::ListChannels => db.list_channels().await,
+                    // TcpRequest::SetAuth(_, _, _) => {}
+                    // TcpRequest::ListChannelUsers(_) => {}
+                    // TcpRequest::ListChannelPublishedUsers(_) => {}
+                    // TcpRequest::SetRoomPublic(_, _) => {}
+                    // TcpRequest::SetRoomMaxPublishers(_, _) => {}
+                    TcpRequest::QueryRoom(chanel_id) => db.query(chanel_id.as_str()).await,
+                    // TcpRequest::KickUser(_, _) => {}
+                    _ => TcpResponse::Unknown,
                 };
-                let res_vec = bincode::serialize(&res).unwrap();
-                socket
-                    .write_all(&res_vec)
-                    .expect("failed to write data to socket");
+                let response = bincode::serialize(&response).unwrap();
+                stream.write(&response).unwrap();
             }
         });
+        print!("Connection closed\n");
     }
 }
 
@@ -67,29 +61,28 @@ pub async fn connect_tcp() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 ///该方法没有并发安全问题，因为只有一个线程会调用
-pub(crate) async fn send_tcp_request(request: TcpRequest) -> TcpResponse {
+pub(crate) fn send_tcp_request(request: TcpRequest) -> TcpResponse {
     let mut buf = vec![0; 1024];
     let req_vec = bincode::serialize(&request).unwrap();
 
     let mut stream = unsafe { Box::from_raw(TCPSTEAM) };
 
-    stream.write(&req_vec).unwrap();
+    while let Err(e) = stream.write(&req_vec) {
+        println!("tcp write error: {}", e);
+    }
     let n = stream.read(&mut buf).unwrap();
-    println!("n:{}", n);
-    println!(" Admin Tcp Received: {:?}", &buf[0..n]);
-
-    let Ok(res) = bincode::deserialize::<TcpResponse>(&buf[..n]) else{
-        println!(" Admin Tcp Connection OK");
-        return TcpResponse::Unknown;
+    unsafe {
+        TCPSTEAM = Box::into_raw(Box::new(*stream));
+    }
+    if let Ok(res) = bincode::deserialize::<TcpResponse>(&buf[..n]) {
+        return res;
     };
-    println!(" Admin Tcp Received: {:?}", res);
     TcpResponse::Unknown
-
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) enum TcpRequest {
-    SetAuth(String, String),
+    SetAuth(String, String, bool),
     ListChannels,
     ListChannelUsers(String),
     ListChannelPublishedUsers(String),
@@ -102,7 +95,25 @@ pub(crate) enum TcpRequest {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) enum TcpResponse {
-    ChannelList(Vec<String>),
+    Ok,
+    One(String),
+    List(Vec<String>),
+    Query(ChannelInfo),
+    DbError,
+    UnknownSelected,
     Unknown,
     Pong,
+}
+
+impl TcpResponse {
+    pub(crate) fn unwrap(self) -> Self {
+        match self {
+            TcpResponse::DbError | TcpResponse::Unknown | TcpResponse::Unknown => {
+                println!("TcpResponse unwrap error");
+                std::io::stdin().read(&mut [0]).unwrap();
+                exit(1);
+            }
+            _ => self,
+        }
+    }
 }
