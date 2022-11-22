@@ -1,4 +1,3 @@
-use crate::admin::structs_types::CommandResult;
 use crate::admin::tcp::TcpResponse;
 use serde::{Deserialize, Serialize};
 use sled::Db;
@@ -16,7 +15,7 @@ pub struct ChannelInfo {
 
 #[derive(Clone)]
 pub struct Dummy {
-    data: Arc<HashMap<String, ChannelInfo>>,
+    data: Arc<Mutex<HashMap<String, ChannelInfo>>>,
 }
 
 #[async_trait::async_trait]
@@ -44,15 +43,29 @@ impl crate::admin::db::traits::AsyncDbTrait for Dummy {
         }
 
         Dummy {
-            data: Arc::new(data),
+            data: Arc::new(Mutex::new(data)),
         }
     }
 
+
     async fn list_channels(&self) -> TcpResponse {
-        TcpResponse::List(self.data.keys().map(|x| x.to_string()).collect())
+        TcpResponse::List(self.data.lock().await.keys().map(|x| x.to_string()).collect())
     }
+
+    async fn set_room_public(&self, channel_id: &str, is_public: bool) -> TcpResponse {
+        let mut data = self.data.lock().await;
+        match data.get_mut(channel_id) {
+            Some(t) => {
+                t.is_public_room = is_public;
+                TcpResponse::Ok
+            }
+            None => TcpResponse::UnknownSelected
+        }
+    }
+
+
     async fn query(&self, channel_id: &str) -> TcpResponse {
-        match self.data.get(channel_id) {
+        match self.data.lock().await.get(channel_id) {
             Some(channel_info) => TcpResponse::Query(channel_info.clone()),
             None => TcpResponse::DbError,
         }

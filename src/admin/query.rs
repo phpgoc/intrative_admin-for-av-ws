@@ -43,5 +43,5 @@ pub fn query() -> CommandResult {
     println!("{}: {:?}", t!("noun.joined"), info.joined);
     std::io::stdin().read_line(&mut String::new()).unwrap();
     clear(&mut std::io::stdout()).unwrap();
-    Ok(AdminCommand::Entry)
+    Ok(AdminCommand::Query)
 }

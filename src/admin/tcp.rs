@@ -33,7 +33,7 @@ pub async fn tcp_server() {
                     // TcpRequest::SetAuth(_, _, _) => {}
                     // TcpRequest::ListChannelUsers(_) => {}
                     // TcpRequest::ListChannelPublishedUsers(_) => {}
-                    // TcpRequest::SetRoomPublic(_, _) => {}
+                    TcpRequest::SetRoomPublic(channel_id, is_public) => {db.set_room_public(&channel_id, is_public).await}
                     // TcpRequest::SetRoomMaxPublishers(_, _) => {}
                     TcpRequest::QueryRoom(chanel_id) => db.query(chanel_id.as_str()).await,
                     // TcpRequest::KickUser(_, _) => {}
@@ -108,7 +108,7 @@ pub(crate) enum TcpResponse {
 impl TcpResponse {
     pub(crate) fn unwrap(self) -> Self {
         match self {
-            TcpResponse::DbError | TcpResponse::Unknown | TcpResponse::Unknown => {
+            TcpResponse::DbError | TcpResponse::Unknown=> {
                 println!("TcpResponse unwrap error");
                 std::io::stdin().read(&mut [0]).unwrap();
                 exit(1);
