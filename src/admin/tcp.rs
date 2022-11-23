@@ -1,32 +1,64 @@
 use crate::admin::db::dummy::{ChannelInfo, Dummy};
 use crate::admin::db::traits::AsyncDbTrait;
+use crate::LogInfo;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::error::Error;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::process::exit;
+use tracing::{error, info, warn};
 
 pub async fn tcp_server() {
     let addr = format!(
         "127.0.0.1:{}",
         env::var("TCP_PORT").unwrap_or_else(|_| "9527".to_string())
     );
+
     let listener = TcpListener::bind(&addr).unwrap();
-    println!("Tcp Listening on : {}", addr);
+    info!(
+        "{:?}",
+        LogInfo {
+            action: "tcp",
+            user: "".to_string(),
+            message: format!("listening on {}", addr)
+        }
+    );
+
     let db_impl = Dummy::new();
     loop {
         let (mut stream, _) = listener.accept().unwrap();
-        println!("New connection: {}", stream.peer_addr().unwrap());
+        info!(
+            "{:?}",
+            LogInfo {
+                action: "tcp",
+                user: "".to_string(),
+                message: format!("tcp join: {}", stream.peer_addr().unwrap())
+            }
+        );
         let db = db_impl.clone();
         tokio::spawn(async move {
             let mut buf = [0; 1024];
             loop {
                 let n = stream.read(&mut buf).unwrap();
                 if n == 0 {
-                    return;
+                    break;
                 }
-                let request: TcpRequest = bincode::deserialize(&buf[..n]).unwrap();
+                let Ok(request) = bincode::deserialize(&buf[..n]) else{
+                    error!("{:?}",
+                        LogInfo {
+                            action: "tcp",
+                            user: "".to_string(),
+                            message: "bincode deserialize error".to_string()
+                        }
+                    );
+                    continue;
+                };
+                info!("{:?}", LogInfo{
+                    action: "tcp request",
+                    user: stream.peer_addr().unwrap().to_string(),
+                    message: format!("{:?}", request)
+                });
                 let response = match request {
                     TcpRequest::Ping => TcpResponse::Pong,
                     TcpRequest::ListChannels => db.list_channels().await,
@@ -35,7 +67,6 @@ pub async fn tcp_server() {
                             .await
                     }
                     TcpRequest::ListChannelUsers(channel) => db.list_channel_users(&channel).await,
-                    // TcpRequest::ListChannelPublishedUsers(_) => {}
                     TcpRequest::SetRoomPublic(channel_id, is_public) => {
                         db.set_room_public(&channel_id, is_public).await
                     }
@@ -46,11 +77,36 @@ pub async fn tcp_server() {
                     }
                     _ => TcpResponse::Unknown,
                 };
+                info!("{:?}", LogInfo{
+                    action: "tcp response",
+                    user: stream.peer_addr().unwrap().to_string(),
+                    message: format!("{:?}", response)
+                });
                 let response = bincode::serialize(&response).unwrap();
-                stream.write(&response).unwrap();
+                match stream.write(&response) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        error!(
+                            "{:?}",
+                            LogInfo {
+                                action: "tcp",
+                                user: "".to_string(),
+                                message: format!("Error writing to socket: {}", e)
+                            }
+                        );
+                        return;
+                    }
+                }
             }
+            warn!(
+                "{:?}",
+                LogInfo {
+                    action: "tcp leave",
+                    user: "".to_string(),
+                    message: format!(" {}", stream.peer_addr().unwrap())
+                }
+            );
         });
-        print!("Connection closed\n");
     }
 }
 
@@ -75,7 +131,14 @@ pub(crate) fn send_tcp_request(request: TcpRequest) -> TcpResponse {
     let mut stream = unsafe { Box::from_raw(TCPSTEAM) };
 
     while let Err(e) = stream.write(&req_vec) {
-        println!("tcp write error: {}", e);
+        error!(
+            "{:?}",
+            LogInfo {
+                action: "tcp_server",
+                user: "system".to_string(),
+                message: e.to_string()
+            }
+        );
         exit(1);
     }
     let n = stream.read(&mut buf).unwrap();
@@ -117,7 +180,14 @@ impl TcpResponse {
     pub(crate) fn unwrap(self) -> Self {
         match self {
             TcpResponse::DbError | TcpResponse::Unknown => {
-                println!("TcpResponse unwrap error");
+                error!(
+                    "{:?}",
+                    LogInfo {
+                        action: "tcp_client",
+                        user: "system".to_string(),
+                        message: "TcpResponse DbError or Unknown".to_string()
+                    }
+                );
                 std::io::stdin().read(&mut [0]).unwrap();
                 exit(1);
             }
